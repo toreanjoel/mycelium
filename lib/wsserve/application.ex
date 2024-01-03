@@ -20,6 +20,8 @@ defmodule Wsserve.Application do
       # Start to serve requests, typically the last entry
       WsserveWeb.Endpoint,
       WsserveWeb.Presence,
+      {DynamicSupervisor, name: Wsserve.SubserverSupervisor, strategy: :one_for_one},
+      {Wsserve.Servers.SubserverManager, name: Wsserve.SubserverManger},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
