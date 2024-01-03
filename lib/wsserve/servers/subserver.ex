@@ -9,20 +9,43 @@ defmodule Wsserve.Servers.Subserver do
   use GenServer
   require Logger
 
-  def start_link(args) do
-    identifier = Atom.to_string(__MODULE__) <> ":" <> args.id
-    GenServer.start_link(__MODULE__, args, name: String.to_atom(identifier) )
+  def start_link(args \\ %{}) do
+    id_instance = UUID.uuid4()
+    init_state = Map.merge(args, %{
+      id: id_instance
+    })
+
+    GenServer.start_link(
+      __MODULE__,
+      init_state,
+      name:
+        String.to_atom(Atom.to_string(__MODULE__) <> ":" <> id_instance) )
   end
 
   # Init the server with relevant states
   def init(args) do
-    init_state = %{
-      config: %{
-        pid: self(),
-        id: Map.get(args, :id, UUID.uuid4())
-      },
-      channel_states: %{}
+    # we need to check if there is a state to init with, start with that
+    init_config = %{
+      pid: self(),
+      manager_pid: args.manager_pid,
+      id: Map.get(args, :id, UUID.uuid4())
     }
+
+    init_state = case custom_state_data =  Map.get(args, :custom_state) do
+      nil ->
+        %{
+          config: init_config,
+          channel_states: %{}
+        }
+      _ ->
+        # remove the old config data
+        custom_data = Map.delete(custom_state_data, :config)
+        Map.merge(%{
+          config: init_config,
+          channel_states: %{}
+        }, custom_data)
+    end
+
     # tell parent that we are ready with config details
     send(args.manager_pid, {:server_config, init_state.config})
     {:ok, init_state}

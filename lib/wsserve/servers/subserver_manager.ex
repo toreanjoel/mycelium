@@ -15,6 +15,8 @@ defmodule Wsserve.Servers.SubserverManager do
   def init(_state) do
     # here we make sure we init this with the running serer details
     init_running_servers()
+    # TODO: potentially move to separate supervised server and make a client function to delete old
+    garbage_collection_job()
 
     {:ok,
      %{
@@ -35,18 +37,10 @@ defmodule Wsserve.Servers.SubserverManager do
 
   # Create sub server
   def handle_call(:create, _from, state) do
-    # todo, setup state struct here
-    # here we make a unique id for the server -  we should look at named if we want
-    {status, pid} =
-      DynamicSupervisor.start_child(
-        SubserverSupervisor,
-        {Subserver, %{id: UUID.uuid4(), manager_pid: self()}}
-      )
-
+    {status, _} = request_create_server()
     case status do
       :ok ->
         {:reply, state, state}
-
       _ ->
         Logger.error("There was a problem creating the server")
         {:reply, "There was a problem creating the server", state}
@@ -78,14 +72,21 @@ defmodule Wsserve.Servers.SubserverManager do
   end
 
   # handling other massages that we dont know about yet
-  def handle_info({event, ref, _, _, _}, state) do
+  def handle_info({event, ref, _, _, data}, state) do
     case event do
       :DOWN ->
-        IO.inspect("A child process fell over")
-        IO.inspect(event)
-        IO.inspect("=======")
+        #TODO: remove the old from the list as it was killed
+        # get the process prev state info
+        {_, [{_, _, [_, _, prev_process_state], _}, _, _, _]} = data
         # restart a new instance with last known data
-
+        IO.inspect(data)
+        {status, _} = request_create_server(prev_process_state)
+        case status do
+          :ok ->
+            Logger.info("Successfully revived crashed server data with last known data")
+          _ ->
+            Logger.error("There was a problem creating the server (recreate from falling)")
+        end
       _ ->
         Logger.error("Something happened with a server")
         IO.inspect(%{
@@ -98,10 +99,27 @@ defmodule Wsserve.Servers.SubserverManager do
   end
 
   # handling other massages that we dont know about yet
+  def handle_info(:garbage_collect, state) do
+    IO.inspect("collect garbage time!")
+    garbage_collection_job()
+    servers = DynamicSupervisor.which_children(SubserverSupervisor)
+    IO.inspect("servers")
+    IO.inspect(servers)
+    IO.inspect(state)
+    # case GenServer.whereis()
+    {:noreply, state}
+  end
+
+  # Catch all at the end for mssages
+  # handling other massages that we dont know about yet
   def handle_info(_event, state) do
-    # TODO: confirm there is nothing else we need to keep an eye on here
     IO.inspect("Non handled process messages")
     {:noreply, state}
+  end
+
+  # The job that will tick and cleanup old processes
+  defp garbage_collection_job() do
+    Process.send_after(self(), :garbage_collect, 60_000) # cleanup every 15min ideally
   end
 
   # init function that if this were to go down and back up it initialized with running servers
@@ -114,7 +132,15 @@ defmodule Wsserve.Servers.SubserverManager do
         send(server_pid, {:request_config, self()})
       end)
     end
-
     # we do nothing if there are no servers
+  end
+
+  # here we request to make a new child sercer
+  defp request_create_server(payload \\ %{}) do
+    init_state = %{
+      manager_pid: self(),
+      custom_state: payload
+    }
+    DynamicSupervisor.start_child( SubserverSupervisor, {Subserver, init_state})
   end
 end
