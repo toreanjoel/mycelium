@@ -61,19 +61,25 @@ defmodule Wsserve.Servers.Subserver do
 
   # Get the current config details stored
   def handle_call(:get_config, _from, state) do
-    {:reply, Map.get(state, :config, "No config found. Make sure it exists"), state}
+    if data = Map.get(state, :config, false) do
+      {:reply, {:ok, data}, state}
+    else
+      {:reply, {:error, "No config found. Make sure it exists"}, state}
+    end
   end
 
   # Returns all the room states that exist currently
-  def handle_call(:all_channels, _from, state) do
+  def handle_call(:get_channels, _from, state) do
     {:reply, Map.keys(state.channel_states), state}
   end
 
   # Get the state by the channel name currently stored in the server
   def handle_call({:get_channel, channel}, _from, state) do
-    {:reply,
-     Map.get(state.channel_states, channel, "No channel found, create or make sure it exists."),
-     state}
+    if data = Map.get(state.channel_states, channel, false) do
+      {:reply, {:ok, data}, state}
+    else
+      {:reply, {:error, "No channel found, create or make sure it exists."}, state}
+    end
   end
 
   # Update the config property. Will replace what is currently there if it already exists
@@ -86,7 +92,18 @@ defmodule Wsserve.Servers.Subserver do
   # Sync: Update the state of the specific channel - will merge to the data currenly existing in memory
   def handle_call({:update_channel, channel, data}, _from, state) do
     updated_state = update_channel_data(channel, data, state)
-    {:reply, updated_state, updated_state}
+    {:reply, {:ok, updated_state}, updated_state}
+  end
+
+  # Sync: Update the state of the specific channel - will merge to the data currenly existing in memory
+  def handle_call({:create_channel, channel}, _from, state) do
+    # Init the state of the new channel
+    channel_data = Map.put(state.channel_states, channel, %{})
+
+    # Return new state
+    new_state = Map.put(state, :channel_states, channel_data)
+
+    {:reply, {:ok, "Channel #{channel} created"}, new_state}
   end
 
   # TODO: Think about if this is reelant

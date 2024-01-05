@@ -5,14 +5,36 @@ defmodule WsserveWeb.RoomChannel do
 
   # we list the events we want to have the interception work for
   # we can do work before sending
-  intercept ["shout"]
+  intercept(["shout"])
 
   @impl true
-  def join(room, payload, socket) do
+  def join("lobby", _payload, socket) do
+    # IO.inspect(channel)
     # user joined the channel
-    send(self(), :user_joined)
+    send(self(), :user_joined_lobby)
     # This is the response after joining, we send a response
-    {:ok, %{"message" => "Welcome to room:" <> room}, socket}
+    {:ok, %{message: "Welcome to room lobby"}, socket}
+  end
+
+  # no access to the channel for access
+  def join(room, _payload, socket) do
+    # This is the response after joining, we send a response
+    # IO.inspect("room")
+    # IO.inspect(room)
+    {status, _} = get_channel(socket.assigns.server_id, room)
+
+    case status do
+      :error ->
+        {:error,
+         %{
+           message:
+             "Room doesn't exist. Request room data from 'room:lobby' in order to get options available"
+         }}
+
+      _ ->
+        send(self(), {:user_joined_room, room})
+        {:ok, socket}
+    end
   end
 
   # Channels can be used in a request/response fashion
@@ -44,7 +66,6 @@ defmodule WsserveWeb.RoomChannel do
 
   # catch before the message get sent out
   @impl true
-  @spec handle_out(<<_::40>>, any(), Phoenix.Socket.t()) :: {:noreply, Phoenix.Socket.t()}
   def handle_out("shout", payload, socket) do
     push(socket, "shout", payload)
     {:noreply, socket}
@@ -52,14 +73,66 @@ defmodule WsserveWeb.RoomChannel do
 
   # Listener to user joined event
   @impl true
-  def handle_info(:user_joined, socket) do
+  def handle_info(:user_joined_lobby, socket) do
+    # push the presence for the channel
+    push_channel_presence(socket)
+
+    # send the room options available to the current user
+    push(socket, "available_rooms", %{rooms: get_channels(socket.assigns.server_id)})
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:user_joined_room, room}, socket) do
+    # push the presence for the channel
+    push_channel_presence(socket)
+
+    {_status, data} = get_channel(socket.assigns.server_id, room)
+    push(socket, "room_state", %{room_state: data})
+
+    {:noreply, socket}
+  end
+
+  # Helper functions in order to interact with the current server
+  defp get_channels(server_id) do
+    p_server = get_server_id(server_id)
+    {_, p_name} = get_server_name(p_server)
+    GenServer.call(p_name, :get_channels)
+  end
+
+  # get details of a specific channel
+  defp get_channel(server_id, channel) do
+    p_server = get_server_id(server_id)
+    {_, p_name} = get_server_name(p_server)
+    GenServer.call(p_name, {:get_channel, channel})
+  end
+
+  # init a new room on the current server
+  defp create_channel(server_id, room) do
+    p_server = get_server_id(server_id)
+    {_, p_name} = get_server_name(p_server)
+    GenServer.call(p_name, {:create_channel, room})
+  end
+
+  # get the server id
+  defp get_server_id(server_id) do
+    servers = GenServer.call(Wsserve.Servers.SubserverManager, :get_servers)
+    Map.get(servers, server_id, false)
+  end
+
+  # get the dynamic server room name - atom server name
+  defp get_server_name(p_server) do
+    Process.info(p_server) |> List.first()
+  end
+
+  # send the presence for the connected channel
+  defp push_channel_presence(socket) do
     {:ok, _} =
       Presence.track(socket, socket.assigns.user.id, %{
         online_at: inspect(System.system_time(:second))
       })
 
     push(socket, "presence_list", Presence.list(socket))
-    {:noreply, socket}
   end
 
   # If we want to send to any channel between modules and app we use

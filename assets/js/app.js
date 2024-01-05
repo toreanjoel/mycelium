@@ -44,14 +44,15 @@ liveSocket.connect();
 window.liveSocket = liveSocket;
 
 // Connect to other sockets
-let socket = new Socket("/socket/server_id", {
+let socket = new Socket("/socket/06e9a959-1733-47e1-b7f1-0b8cefc43289", {
   params: { token: window.userToken },
 });
 socket.connect();
 
-let channel = socket.channel("lobby", { some: "data" });
-channel.join()
+let lobbyChannel = socket.channel("lobby", {});
+lobbyChannel.join()
   .receive("ok", (resp) => {
+    console.log("resp", resp)
     // we send get and send if we are joined.
     const pingElm = document.querySelector("#elm-ping");
     const shoutElm = document.querySelector("#elm-shout");
@@ -60,19 +61,36 @@ channel.join()
     // interact with the elements to push events
     pingElm.addEventListener("click", () => {
       console.log("ping the server")
-      channel.push("ping", {})
+      lobbyChannel.push("ping", {})
     })
 
     shoutElm.addEventListener("click", () => {
       console.log("shout to the server")
-      channel.push("shout", {})
+      lobbyChannel.push("shout", {})
     })
     
     dcElm.addEventListener("click", () => {
       console.log("disconnect from the server")
-      channel.push("disconnect", { channel: "lobby"})
+      lobbyChannel.push("disconnect", { channel: "lobby"})
     })
   
+  })
+  .receive("error", (resp) => {
+    console.log("Unable to join", resp);
+  });
+
+let chatChannel = socket.channel("chat", {});
+chatChannel.join()
+  .receive("ok", (resp) => {
+    console.log("resp", resp)
+  })
+  .receive("error", (resp) => {
+    console.log("Unable to join", resp);
+  });
+let gameChannel = socket.channel("game", {});
+gameChannel.join()
+  .receive("ok", (resp) => {
+    console.log("resp", resp)
   })
   .receive("error", (resp) => {
     console.log("Unable to join", resp);

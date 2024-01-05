@@ -24,6 +24,7 @@ defmodule Wsserve.Servers.SubserverManager do
   end
 
   # Get server state curr in memory
+  # TODO: this needs to be grouped by user id or the subserver itself needs to be dynamic per user
   def handle_call(:get_servers, _from, state) do
     {:reply, Map.get(state, :servers), state}
   end
@@ -42,15 +43,9 @@ defmodule Wsserve.Servers.SubserverManager do
     end
   end
 
-  # add ref to process and pid
-
   # delete a sub server
 
   # remove reference to process and pid
-
-  # handle info to listen for crashes on sub servers
-
-  # clear relevant process ref and pid if crash
 
   def handle_info({:server_config, %{id: server_id, pid: server_pid}}, state) do
     # we start monitoring the process for other messages
@@ -80,6 +75,7 @@ defmodule Wsserve.Servers.SubserverManager do
 
   # Catch all at the end for mssages
   # handling other massages that we dont know about yet
+  # TODO: Look at managing the killing or deleting a server
   def handle_info(event, state) do
     IO.inspect("Non handled process messages")
     IO.inspect("-----")

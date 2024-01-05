@@ -38,14 +38,20 @@ defmodule WsserveWeb.UserSocket do
   # performing token verification on connect.
   @impl true
   def connect(params, socket, _connect_info) do
-    %{"token" => token} = params;
+    %{"token" => token, "id" => id} = params;
     # TODO: Add user auth checks in the auth plug and sign with the salt in that module
     # Validity for how long we want to keep the user connected - currently 2 weeks
-    case Phoenix.Token.verify(socket, @salt, token, max_age: 1_209_600) do
-      {:ok, user} ->
-        # we add the user id to the socket from the token
-        {:ok, assign(socket, :user, user)}
-      {:error, _reason} ->
+    servers = GenServer.call(Wsserve.Servers.SubserverManager, :get_servers)
+    if Map.get(servers, id, false) do
+      case Phoenix.Token.verify(socket, @salt, token, max_age: 1_209_600) do
+        {:ok, user} ->
+          # we add the user id to the socket from the token
+          socket = assign(socket, :user, user) |> assign(:server_id, id)
+          {:ok, socket}
+        {:error, _reason} ->
+          :error # we just stop the connection going forward
+        end
+      else
         :error # we just stop the connection going forward
     end
   end
