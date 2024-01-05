@@ -6,20 +6,22 @@ defmodule Wsserve.Servers.Subserver do
 
     Server manager is repsonsibile for asking a dynamic supervisor to init with relevant config
   """
-  use GenServer
+  use GenServer, restart: :temporary
   require Logger
 
   def start_link(args \\ %{}) do
     id_instance = UUID.uuid4()
-    init_state = Map.merge(args, %{
-      id: id_instance
-    })
+
+    init_state =
+      Map.merge(args, %{
+        id: id_instance
+      })
 
     GenServer.start_link(
       __MODULE__,
       init_state,
-      name:
-        String.to_atom(Atom.to_string(__MODULE__) <> ":" <> id_instance) )
+      name: String.to_atom(Atom.to_string(__MODULE__) <> ":" <> id_instance)
+    )
   end
 
   # Init the server with relevant states
@@ -31,20 +33,26 @@ defmodule Wsserve.Servers.Subserver do
       id: Map.get(args, :id, UUID.uuid4())
     }
 
-    init_state = case custom_state_data =  Map.get(args, :custom_state) do
-      nil ->
-        %{
-          config: init_config,
-          channel_states: %{}
-        }
-      _ ->
-        # remove the old config data
-        custom_data = Map.delete(custom_state_data, :config)
-        Map.merge(%{
-          config: init_config,
-          channel_states: %{}
-        }, custom_data)
-    end
+    init_state =
+      case custom_state_data = Map.get(args, :custom_state) do
+        nil ->
+          %{
+            config: init_config,
+            channel_states: %{}
+          }
+
+        _ ->
+          # remove the old config data
+          custom_data = Map.delete(custom_state_data, :config)
+
+          Map.merge(
+            %{
+              config: init_config,
+              channel_states: %{}
+            },
+            custom_data
+          )
+      end
 
     # tell parent that we are ready with config details
     send(args.manager_pid, {:server_config, init_state.config})
@@ -63,7 +71,9 @@ defmodule Wsserve.Servers.Subserver do
 
   # Get the state by the channel name currently stored in the server
   def handle_call({:get_channel, channel}, _from, state) do
-    {:reply, Map.get(state.channel_states, channel, "No channel found, create or make sure it exists."), state}
+    {:reply,
+     Map.get(state.channel_states, channel, "No channel found, create or make sure it exists."),
+     state}
   end
 
   # Update the config property. Will replace what is currently there if it already exists
@@ -93,17 +103,20 @@ defmodule Wsserve.Servers.Subserver do
   end
 
   # Here we update channel data to the state
-  defp update_channel_data(channel, data, state) do
-    curr_channel = Map.get(state.channel_states, channel)
-    updated_details = case curr_channel do
-      nil -> Map.new() |> Map.put_new(channel, data)
-      _ -> Map.merge(curr_channel, data)
-    end
+  def update_channel_data(channel, data, state) do
+    # Get current state of the channel
+    curr_channel = Map.get(state.channel_states, channel, %{})
 
-    # replace the old channel
-    updated_channel = Map.put(state.channel_states, channel, updated_details)
-    Map.put(state, :channel_states, updated_channel)
+    # Merge the current state with new data
+    updated_details = Map.merge(curr_channel, data)
+
+    # Update the channel_states with the new channel data
+    updated_channel_states = Map.put(state.channel_states, channel, updated_details)
+
+    # Return new state
+    Map.put(state, :channel_states, updated_channel_states)
   end
 
   # TODO: setup the job process to check activity and batch update current state
+  # TODO: Use Task
 end
