@@ -44,7 +44,7 @@ liveSocket.connect();
 window.liveSocket = liveSocket;
 
 // Connect to other sockets
-let socket = new Socket("/socket/06e9a959-1733-47e1-b7f1-0b8cefc43289", {
+let socket = new Socket("/socket/2aa5bfbf-b5f5-4eef-9ffa-6cb88448579c", {
   params: { token: window.userToken },
 });
 socket.connect();

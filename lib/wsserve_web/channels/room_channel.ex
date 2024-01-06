@@ -40,6 +40,26 @@ defmodule WsserveWeb.RoomChannel do
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
   @impl true
+  def handle_in("push", payload \\ %{}, socket) do
+    server_id = socket.assigns.server_id
+    channel = socket.topic
+    # basic data structure for now
+    event_data = %{
+      user: socket.assigns.user.id,
+      payload: payload
+    }
+
+    data = Map.new() |> Map.put(DateTime.utc_now() |> DateTime.to_unix, event_data)
+
+    update_channel_state(server_id, channel, data)
+
+    {_, data} = get_channel(server_id, channel)
+    broadcast_from!(socket, "msg", %{ data: data})
+
+    {:reply, {:ok, event_data}, socket}
+  end
+
+  @impl true
   def handle_in("ping", payload, socket) do
     {:reply, {:ok, payload}, socket}
   end
@@ -78,7 +98,7 @@ defmodule WsserveWeb.RoomChannel do
     push_channel_presence(socket)
 
     # send the room options available to the current user
-    push(socket, "available_rooms", %{rooms: get_channels(socket.assigns.server_id)})
+    push(socket, "available_rooms", %{data: get_channels(socket.assigns.server_id)})
     {:noreply, socket}
   end
 
@@ -88,7 +108,7 @@ defmodule WsserveWeb.RoomChannel do
     push_channel_presence(socket)
 
     {_status, data} = get_channel(socket.assigns.server_id, room)
-    push(socket, "room_state", %{room_state: data})
+    push(socket, "room_state", %{data: data})
 
     {:noreply, socket}
   end
@@ -98,6 +118,13 @@ defmodule WsserveWeb.RoomChannel do
     p_server = get_server_id(server_id)
     {_, p_name} = get_server_name(p_server)
     GenServer.call(p_name, :get_channels)
+  end
+
+  # update the state
+  defp update_channel_state(server_id, channel, data) do
+    p_server = get_server_id(server_id)
+    {_, p_name} = get_server_name(p_server)
+    GenServer.call(p_name, {:update_channel, channel, data})
   end
 
   # get details of a specific channel
