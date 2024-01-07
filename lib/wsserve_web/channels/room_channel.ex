@@ -54,7 +54,7 @@ defmodule WsserveWeb.RoomChannel do
     update_channel_state(server_id, channel, data)
 
     {_, data} = get_channel(server_id, channel)
-    broadcast_from!(socket, "msg", %{ data: data})
+    broadcast(socket, "msg", %{ data: data})
 
     {:reply, {:ok, event_data}, socket}
   end
@@ -135,6 +135,9 @@ defmodule WsserveWeb.RoomChannel do
   end
 
   # init a new room on the current server
+  # TODO: Setup the channel types - you can have it be unique per room
+  # TODO: Message Type (accumulative)
+  # TODO: Colabborative Type (replace)
   defp create_channel(server_id, room) do
     p_server = get_server_id(server_id)
     {_, p_name} = get_server_name(p_server)

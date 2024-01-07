@@ -96,6 +96,8 @@ defmodule Wsserve.Servers.Subserver do
   end
 
   # Sync: Update the state of the specific channel - will merge to the data currenly existing in memory
+  # TODO: Create diff types? Rooms are either accumulative or replace per user
+  # TODO: We need to make sure updates are based off the type to the channel state per room
   def handle_call({:create_channel, channel}, _from, state) do
     # Init the state of the new channel
     channel_data = Map.put(state.channel_states, channel, %{})

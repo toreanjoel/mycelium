@@ -38,11 +38,11 @@ defmodule WsserveWeb.UserSocket do
   # performing token verification on connect.
   @impl true
   def connect(params, socket, _connect_info) do
-    IO.inspect(params)
-    IO.inspect(socket)
     # %{"token" => token, "id" => id} = params;
     %{"id" => id} = params;
     # TODO: Add user auth checks in the auth plug and sign with the salt in that module
+    # TODO: User can add meta_data and a unique name and we use that to make an id when connecting
+    # TODO: This is used across the board on the connection
     # Validity for how long we want to keep the user connected - currently 2 weeks
     servers = GenServer.call(Wsserve.Servers.SubserverManager, :get_servers)
     if Map.get(servers, id, false) do
