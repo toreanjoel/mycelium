@@ -31,6 +31,6 @@ defmodule WsserveWeb.UserAuth do
   defp put_user_token(conn) do
     # token = Phoenix.Token.sign(conn, crypto_salt(), %{ id: :rand.uniform() * 5 })
     # assign(conn, :user_token, token)
-    assign(conn, :user, %{ id: :rand.uniform() * 5 })
+    assign(conn, :user, %{ id:  UUID.uuid4() })
   end
 end

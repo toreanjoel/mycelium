@@ -10,53 +10,44 @@ defmodule Wsserve.Servers.Subserver do
   require Logger
 
   def start_link(args \\ %{}) do
-    id_instance = UUID.uuid4()
-
-    init_state =
-      Map.merge(args, %{
-        id: id_instance
-      })
+    uuid = UUID.uuid4()
 
     GenServer.start_link(
       __MODULE__,
-      init_state,
-      name: String.to_atom(Atom.to_string(__MODULE__) <> ":" <> id_instance)
+      Map.merge(args, %{
+        id: uuid
+      }),
+      name: String.to_atom(Atom.to_string(__MODULE__) <> ":" <> uuid)
     )
   end
 
-  # Init the server with relevant states
   def init(args) do
-    # we need to check if there is a state to init with, start with that
-    init_config = %{
+    config = %Wsserve.Servers.Subserver.Config{
       pid: self(),
       manager_pid: args.manager_pid,
       id: Map.get(args, :id, UUID.uuid4())
     }
 
-    init_state =
-      case custom_state_data = Map.get(args, :custom_state) do
+    # we set the deafault state of allowing a lobby for all servers
+    base_state = %{
+      config: config,
+      channel_states: %{
+        "lobby" => Wsserve.Servers.Subserver.Structs.generate_type()
+      }
+    }
+
+    state =
+      case init_state = args.custom_state do
         nil ->
-          %{
-            config: init_config,
-            channel_states: %{}
-          }
+          base_state
 
         _ ->
-          # remove the old config data
-          custom_data = Map.delete(custom_state_data, :config)
-
-          Map.merge(
-            %{
-              config: init_config,
-              channel_states: %{}
-            },
-            custom_data
-          )
+          Map.merge(base_state, Map.delete(init_state, :config))
       end
 
     # tell parent that we are ready with config details
-    send(args.manager_pid, {:server_config, init_state.config})
-    {:ok, init_state}
+    send(args.manager_pid, {:server_config, state.config})
+    {:ok, state}
   end
 
   # Get the current config details stored
@@ -82,36 +73,44 @@ defmodule Wsserve.Servers.Subserver do
     end
   end
 
+  # TODO: The updating of the config wont be needed for now
   # Update the config property. Will replace what is currently there if it already exists
-  def handle_call({:update_config, key, value}, _from, state) do
-    updated_config = Map.put(state.config, key, value)
-    updated_state = Map.put(state, :config, updated_config)
-    {:reply, updated_state, updated_state}
-  end
+  # def handle_call({:update_config, key, value}, _from, state) do
+  #   updated_config = Map.put(state.config, key, value)
+  #   updated_state = Map.put(state, :config, updated_config)
+  #   {:reply, updated_state, updated_state}
+  # end
 
   # Sync: Update the state of the specific channel - will merge to the data currenly existing in memory
   def handle_call({:update_channel, channel, data}, _from, state) do
-    updated_state = update_channel_data(channel, data, state)
-    {:reply, {:ok, updated_state}, updated_state}
+    curr_channel = Map.get(state.channel_states, channel, false)
+    if curr_channel do
+      type = curr_channel.type
+      updated_state = update_channel(channel, data, state, type)
+      {:reply, {:ok, updated_state}, updated_state}
+    else
+      Logger.error("Unable to find channel to update")
+      {:reply, {:ok, state}, state}
+    end
   end
 
-  # Sync: Update the state of the specific channel - will merge to the data currenly existing in memory
-  # TODO: Create diff types? Rooms are either accumulative or replace per user
-  # TODO: We need to make sure updates are based off the type to the channel state per room
-  def handle_call({:create_channel, channel}, _from, state) do
-    # Init the state of the new channel
-    channel_data = Map.put(state.channel_states, channel, %{})
+  # create a channel by type either collab or accumulative
+  def handle_call({:create_channel, channel_name, type}, _from, state) do
+    channel =
+      Map.put(
+        state.channel_states,
+        channel_name,
+        Wsserve.Servers.Subserver.Structs.generate_type(type)
+      )
 
-    # Return new state
-    new_state = Map.put(state, :channel_states, channel_data)
-
-    {:reply, {:ok, "Channel #{channel} created"}, new_state}
+    new_state = Map.put(state, :channel_states, channel)
+    {:reply, {:ok, "Channel #{channel_name} created"}, new_state}
   end
 
   # TODO: Think about if this is reelant
   # Async: Update the state of the specific channel - will merge to the data currenly existing in memory
   # def handle_cast({:update_channel, channel, data}, state) do
-  #   updated_state = update_channel_data(channel, data, state)
+  #   updated_state = update_channel(channel, data, state)
   #   {:noreply, updated_state}
   # end
 
@@ -122,20 +121,28 @@ defmodule Wsserve.Servers.Subserver do
   end
 
   # Here we update channel data to the state
-  def update_channel_data(channel, data, state) do
-    # Get current state of the channel
-    curr_channel = Map.get(state.channel_states, channel, %{})
+  def update_channel(channel, data, %{channel_states: channel_states} = state, type)
+    when type in [:accumulative, :collaborative] do
+  curr_channel = Map.get(channel_states, channel, %{})
 
-    # Merge the current state with new data
-    updated_details = Map.merge(curr_channel, data)
+  updated_details =
+    case type do
+      :accumulative ->
+        payload = Map.new() |> Map.put(DateTime.utc_now() |> DateTime.to_unix(), data)
+        Map.merge(curr_channel.state, payload)
 
-    # Update the channel_states with the new channel data
-    updated_channel_states = Map.put(state.channel_states, channel, updated_details)
+      :collaborative ->
+        # Assuming data is a map with user ID as key and payload as value
+        payload = Map.new() |> Map.put(data.user.id, data)
+        Map.merge(curr_channel.state, payload)
 
-    # Return new state
-    Map.put(state, :channel_states, updated_channel_states)
-  end
+      _ ->
+        Logger.error("Unknown channel type: #{inspect(type)}")
+        curr_channel.state
+    end
 
-  # TODO: setup the job process to check activity and batch update current state
-  # TODO: Use Task
+  updated_channel_states = Map.put(channel_states, channel, %{curr_channel | state: updated_details})
+  Map.put(state, :channel_states, updated_channel_states)
+end
+
 end

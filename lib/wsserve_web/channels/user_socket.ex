@@ -21,6 +21,7 @@ defmodule WsserveWeb.UserSocket do
   # See the [`Channels guide`](https://hexdocs.pm/phoenix/channels.html)
   # for further details.
   channel "*", WsserveWeb.RoomChannel
+  channel "lobby", WsserveWeb.LobbyChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -37,15 +38,10 @@ defmodule WsserveWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   @impl true
-  def connect(params, socket, _connect_info) do
-    # %{"token" => token, "id" => id} = params;
-    %{"id" => id} = params;
-    # TODO: Add user auth checks in the auth plug and sign with the salt in that module
-    # TODO: User can add meta_data and a unique name and we use that to make an id when connecting
-    # TODO: This is used across the board on the connection
-    # Validity for how long we want to keep the user connected - currently 2 weeks
+  def connect(%{"id" => server_id}, socket, _connect_info) do
     servers = GenServer.call(Wsserve.Servers.SubserverManager, :get_servers)
-    if Map.get(servers, id, false) do
+    if Map.get(servers, server_id, false) do
+      # Validity for how long we want to keep the user connected - currently 2 weeks
       # case Phoenix.Token.verify(socket, @salt, token, max_age: 1_209_600) do
       #   {:ok, user} ->
       #     # we add the user id to the socket from the token
@@ -54,8 +50,7 @@ defmodule WsserveWeb.UserSocket do
       #   {:error, _reason} ->
       #     :error # we just stop the connection going forward
       #   end
-      new_socket = assign(socket, :user, %{ id: :rand.uniform() * 5 }) |> assign(:server_id, id)
-      {:ok, new_socket}
+      {:ok, assign(socket, :server_id, server_id)}
       else
         :error # we just stop the connection going forward
     end
