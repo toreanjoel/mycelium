@@ -1,4 +1,5 @@
 defmodule WsserveWeb.UserSocket do
+  require Logger
   use Phoenix.Socket
 
   @salt "user_auth_salt"
@@ -38,7 +39,7 @@ defmodule WsserveWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   @impl true
-  def connect(%{"id" => server_id}, socket, _connect_info) do
+  def connect(%{"id" => server_id} = payload, socket, _connect_info) do
     servers = GenServer.call(Wsserve.Servers.SubserverManager, :get_servers)
     if Map.get(servers, server_id, false) do
       # Validity for how long we want to keep the user connected - currently 2 weeks
@@ -50,11 +51,17 @@ defmodule WsserveWeb.UserSocket do
       #   {:error, _reason} ->
       #     :error # we just stop the connection going forward
       #   end
-      {:ok, assign(socket, :server_id, server_id)}
+
+      user_data = %{
+        id: Map.get(payload, "userId", UUID.uuid4())
+      }
+
+      {:ok, assign(socket, :server_id, server_id) |> assign(:user, user_data)}
       else
         :error # we just stop the connection going forward
     end
   end
+
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
   #

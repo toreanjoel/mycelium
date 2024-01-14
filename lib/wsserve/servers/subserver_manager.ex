@@ -30,7 +30,7 @@ defmodule Wsserve.Servers.SubserverManager do
   end
 
   # Create sub server
-  def handle_call(:create, _from, state) do
+  def handle_call(:create_server, _from, state) do
     {status, _} = request_create_server()
 
     case status do
@@ -86,19 +86,31 @@ defmodule Wsserve.Servers.SubserverManager do
     {:noreply, state}
   end
 
+  # TODO: account for the missing
+  # {:DOWN, #Reference<0.794012290.1310721.23505>, :process, #PID<0.613.0>, {{:badkey, :id, "torean"}, [{Wsserve.Servers.Subserver, :channel_state_update, 4, [file: 'lib/wsserve/servers/subserver.ex', line: 133]}, {Wsserve.Servers.Subserver, :handle_call, 3, [file: 'lib/wsserve/servers/subserver.ex', line: 93]}, {:gen_server, :try_handle_call, 4, [file: 'gen_server.erl', line: 1113]}, {:gen_server, :handle_msg, 6, [file: 'gen_server.erl', line: 1142]}, {:proc_lib, :init_p_do_apply, 3, [file: 'proc_lib.erl', line: 241]}]}}
+  # State: %{servers: %{"5428744d-b465-4098-aa25-634c0e31d804" => #PID<0.613.0>}}
+
   # Subserver dies or crashes for some reason
   def handle_info({:DOWN, _ref, _, _, data}, state) do
-    {_, [{_, _, [_, _, prev_process_state], _}, _, _, _]} = data
-    {status, _} = request_create_server(prev_process_state)
+    case data do
+      {_, [{_, _, [_, _, prev_process_state], _}, _, _, _]} ->
+        # NOTE: here we send the entire prev state so it will include configs etc
+        # This might not be need for the users
+        {status, _} = request_create_server(prev_process_state)
 
-    case status do
-      :ok ->
-        Logger.info("Successfully revived crashed server data with last known data")
-        # Delete the ref in the state of the crashed process from the manager
-        {:noreply, remove_from_registry(state, Kernel.get_in(prev_process_state, [:config, :id]))}
+        case status do
+          :ok ->
+            Logger.info("Successfully revived crashed server data with last known data")
+            # Delete the ref in the state of the crashed process from the manager
+            {:noreply, remove_from_registry(state, Kernel.get_in(prev_process_state, [:config, :id]))}
 
+          _ ->
+            Logger.error("There was a problem creating the server (recreate from falling)")
+            {:noreply, state}
+        end
       _ ->
-        Logger.error("There was a problem creating the server (recreate from falling)")
+        # TODO: move this to a separate function
+        Logger.error("Error, process DOWN error")
         {:noreply, state}
     end
   end

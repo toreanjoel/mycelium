@@ -51,7 +51,8 @@ defmodule Wsserve.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.5"},
-      {:uuid, "~> 1.1.8" }
+      {:uuid, "~> 1.1.8" },
+      {:ex_doc, "~> 0.16", only: :dev, runtime: false}
     ]
   end
 

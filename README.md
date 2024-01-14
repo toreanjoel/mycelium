@@ -73,6 +73,15 @@ Comprehensive documentation will be provided, detailing setup procedures, API us
 
 Prior to release, WSServer will undergo rigorous load testing to ensure it can handle the expected concurrent connection load and message throughput. Performance metrics and results will be made available in the documentation.
 
+- Look into using Tsung tooling or Artillery.
+
+### Notes for scaling
+- look into the system settings i.e ulimit etc
+- make sure we turn off the presence emit update (try sending only data that is required and not automated)
+- observer to look at the process info, get this installed and use it to manage process info
+- heatbeat update? look at making this less or stopping sooner for users that disconnect and the server neeind to process this
+- ETS storage type update, change from bag to duplicate bag, bag grows linear when inserting to same key, bag is constant
+
 ## Contributing
 
 As an open platform, contributions and feedback are welcomed. Developers are encouraged to submit issues, pull requests, or suggestions to help improve WSServer.

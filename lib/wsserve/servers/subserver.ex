@@ -43,7 +43,7 @@ defmodule Wsserve.Servers.Subserver do
     base_state = %{
       config: config,
       channel_states: %{
-        "lobby" => Wsserve.Servers.Subserver.Structs.generate_type()
+        "lobby" => %Wsserve.Servers.Subserver.Structs{type: :default, state: %{}}
       }
     }
 
@@ -90,7 +90,7 @@ defmodule Wsserve.Servers.Subserver do
 
     if curr_channel do
       type = curr_channel.type
-      updated_state = update_channel(channel, data, state, type)
+      updated_state = channel_state_update(channel, data, state, type)
       {:reply, {:ok, updated_state}, updated_state}
     else
       Logger.error("Unable to find channel to update")
@@ -104,7 +104,7 @@ defmodule Wsserve.Servers.Subserver do
       Map.put(
         state.channel_states,
         channel_name,
-        Wsserve.Servers.Subserver.Structs.generate_type(type)
+        %Wsserve.Servers.Subserver.Structs{type: type, state: %{}}
       )
 
     new_state = Map.put(state, :channel_states, channel)
@@ -118,7 +118,7 @@ defmodule Wsserve.Servers.Subserver do
   end
 
   # Here we update channel data to the state
-  defp update_channel(channel, data, %{channel_states: channel_states} = state, type)
+  defp channel_state_update(channel, data, %{channel_states: channel_states} = state, type)
        when type in [:accumulative, :collaborative] do
     curr_channel = Map.get(channel_states, channel, %{})
 
@@ -143,4 +143,7 @@ defmodule Wsserve.Servers.Subserver do
 
     Map.put(state, :channel_states, updated_channel_states)
   end
+
+  # dispatch response to user
+  # TODO: we need to send or broadcast to the user socket, we dont send back to the user
 end

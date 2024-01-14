@@ -8,6 +8,7 @@ defmodule WsserveWeb.RoomChannel do
   intercept(["shout"])
 
   # no access to the channel for access
+  @impl true
   def join(room, _payload, socket) do
     {status, _} = ChannelHelpers.get_channel(socket.assigns.server_id, room)
     case status do
@@ -29,7 +30,7 @@ defmodule WsserveWeb.RoomChannel do
     server_id = socket.assigns.server_id
     channel = socket.topic
 
-    event_data = %WsserveWeb.Channels.Structs.PushPayload{
+    event_data = %{
       user: socket.assigns.user,
       payload: payload
     }

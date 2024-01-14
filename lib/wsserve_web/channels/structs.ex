@@ -7,6 +7,7 @@ defmodule WsserveWeb.Channels.Structs do
     @moduledoc """
       The payload the client sends as data to the channels
     """
+    @derive {Jason.Encoder, only: [:user, :payload]}
     @enforce_keys [:user, :payload]
     defstruct [:user, :payload]
   end
