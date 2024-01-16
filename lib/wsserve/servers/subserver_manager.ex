@@ -15,7 +15,7 @@ defmodule Wsserve.Servers.SubserverManager do
   def init(_state) do
     # here we make sure we init this with the running serer details
     init_running_servers()
-
+    # TODO: Add a way to check if the processes in memory are active with process info, cleanup otherwise
     {:ok,
      %{
        servers: %{}

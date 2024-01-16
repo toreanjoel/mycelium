@@ -98,6 +98,27 @@ defmodule Wsserve.Servers.Subserver do
     end
   end
 
+  # Global room or channel state that will be initalized with properties
+  def handle_call({:create_channel, channel_name, type, init_payload}, _from, state) when type == :shared_state do
+    # Get the init payload fallback to empty - ideally the user sets relevant keys
+    init_payload = init_payload || %{}
+
+    # TODO: We need to consider making sure if keys are added, the key needs a set mode
+    # this mode is then used to determine how we update that key.
+    # For now we always replace the global state.
+    # NOTE: We rely on the gen server to manage the order of the updates
+
+    channel =
+      Map.put(
+        state.channel_states,
+        channel_name,
+        %Wsserve.Servers.Subserver.Structs{type: type, state: init_payload}
+      )
+
+    new_state = Map.put(state, :channel_states, channel)
+    {:reply, {:ok, "Channel #{channel_name} created with type #{type}"}, new_state}
+  end
+
   # create a channel by type either collab or accumulative
   def handle_call({:create_channel, channel_name, type}, _from, state) do
     channel =
@@ -108,7 +129,7 @@ defmodule Wsserve.Servers.Subserver do
       )
 
     new_state = Map.put(state, :channel_states, channel)
-    {:reply, {:ok, "Channel #{channel_name} created"}, new_state}
+    {:reply, {:ok, "Channel #{channel_name} created with type #{type}"}, new_state}
   end
 
   # here we listen for the requests to send configs to process to manage
@@ -117,21 +138,36 @@ defmodule Wsserve.Servers.Subserver do
     {:noreply, state}
   end
 
-  # Here we update channel data to the state
+  # Here we update channel data to the state - accumualtive or collaborative
+  # TODO: break this down so that its less
   defp channel_state_update(channel, data, %{channel_states: channel_states} = state, type)
-       when type in [:accumulative, :collaborative] do
+       when type in [:accumulative_state, :collaborative_state, :shared_state] do
     curr_channel = Map.get(channel_states, channel, %{})
 
     updated_details =
       case type do
-        :accumulative ->
+        :accumulative_state ->
           payload = Map.new() |> Map.put(DateTime.utc_now() |> DateTime.to_unix(), data)
           Map.merge(curr_channel.state, payload)
 
-        :collaborative ->
+        :collaborative_state ->
           # Assuming data is a map with user ID as key and payload as value
           payload = Map.new() |> Map.put(data.user.id, data)
           Map.merge(curr_channel.state, payload)
+
+        :shared_state ->
+          # TODO: Accumulate data later
+          room_state = curr_channel.state
+          # Here we take the passed data and try add
+          updated_init = Enum.reduce(Map.keys(data.payload), room_state, fn curr_data_key, curr_room_state ->
+            if Map.has_key?(curr_room_state, curr_data_key) do
+              Map.put(curr_room_state, curr_data_key, Map.get(data.payload, curr_data_key))
+            else
+              curr_room_state
+            end
+          end)
+
+          Map.merge(room_state, updated_init)
 
         _ ->
           Logger.error("Unknown channel type: #{inspect(type)}")
