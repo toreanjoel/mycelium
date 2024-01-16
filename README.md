@@ -40,6 +40,12 @@ At its core, WSServer is built to handle real-time WebSocket connections with ea
 - **Server Process Isolation**: Each server instance operates in isolation, enhancing security and stability.
 - **Real-Time Data Flow**: Ensures rapid data exchange and state updates across client-server connections.
 
+### Example (WIP)
+- Room Based Chat (type: Accumulative)
+- Multiplayer Movement  (type: Collaborative)
+- Drawing Application (type: Shared)
+- more...
+
 ## Implementation Details
 
 ### Server Process Creation
@@ -75,11 +81,11 @@ Prior to release, WSServer will undergo rigorous load testing to ensure it can h
 
 - Look into using Tsung tooling or Artillery.
 
-### Notes for scaling
-- look into the system settings i.e ulimit etc
-- make sure we turn off the presence emit update (try sending only data that is required and not automated)
-- observer to look at the process info, get this installed and use it to manage process info
-- heatbeat update? look at making this less or stopping sooner for users that disconnect and the server neeind to process this
+### Scaling Planning
+- Look into the system settings i.e ulimit etc
+- Make sure we turn off the presence emit update (try sending only data that is required and not automated)
+- Observer to look at the process info, get this installed and use it to manage process info
+- Heatbeat update? look at making this less or stopping sooner for users that disconnect and the server neeind to process this
 - ETS storage type update, change from bag to duplicate bag, bag grows linear when inserting to same key, bag is constant
 
 ## Contributing

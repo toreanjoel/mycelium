@@ -91,6 +91,7 @@ defmodule Wsserve.Servers.Subserver do
     if curr_channel do
       type = curr_channel.type
       updated_state = channel_state_update(channel, data, state, type)
+      # TODO: consider sending through errors if types if payload is not correct
       {:reply, {:ok, updated_state}, updated_state}
     else
       Logger.error("Unable to find channel to update")
