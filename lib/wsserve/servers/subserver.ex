@@ -125,7 +125,9 @@ defmodule Wsserve.Servers.Subserver do
     channel =
       Map.put(
         state.channel_states,
-        channel_name,
+        # We make sure we dont have spaces
+        # TODO: replace or dont allow special characters
+        channel_name |> String.trim |> String.replace(" ", "_"),
         %Wsserve.Servers.Subserver.Structs{type: type, state: %{}}
       )
 

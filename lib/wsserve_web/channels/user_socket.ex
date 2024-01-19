@@ -21,8 +21,8 @@ defmodule WsserveWeb.UserSocket do
   #
   # See the [`Channels guide`](https://hexdocs.pm/phoenix/channels.html)
   # for further details.
-  channel "*", WsserveWeb.RoomChannel
   channel "lobby", WsserveWeb.LobbyChannel
+  channel "*", WsserveWeb.RoomChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
