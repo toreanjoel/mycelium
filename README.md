@@ -41,9 +41,9 @@ At its core, WSServer is built to handle real-time WebSocket connections with ea
 - **Real-Time Data Flow**: Ensures rapid data exchange and state updates across client-server connections.
 
 ### Example (WIP)
-- Room Based Chat (type: Accumulative)
+- [Room Based Chat (type: Accumulative)](https://github.com/toreanjoel/wsserve-demos/tree/main/socket-chat)
+- [Drawing Application (type: Shared / Collaborative)](https://github.com/toreanjoel/wsserve-demos/tree/main/socket-draw)
 - Multiplayer Movement  (type: Collaborative)
-- Drawing Application (type: Shared)
 - more...
 
 ## Implementation Details
