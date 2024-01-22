@@ -100,7 +100,8 @@ defmodule Wsserve.Servers.Subserver do
   end
 
   # Global room or channel state that will be initalized with properties
-  def handle_call({:create_channel, channel_name, type, init_payload}, _from, state) when type == :shared_state do
+  def handle_call({:create_channel, channel_name, type, init_payload}, _from, state)
+      when type == :shared_state do
     # Get the init payload fallback to empty - ideally the user sets relevant keys
     init_payload = init_payload || %{}
 
@@ -127,7 +128,7 @@ defmodule Wsserve.Servers.Subserver do
         state.channel_states,
         # We make sure we dont have spaces
         # TODO: replace or dont allow special characters
-        channel_name |> String.trim |> String.replace(" ", "_"),
+        channel_name |> String.trim() |> String.replace(" ", "_"),
         %Wsserve.Servers.Subserver.Structs{type: type, state: %{}}
       )
 
@@ -160,15 +161,17 @@ defmodule Wsserve.Servers.Subserver do
 
         :shared_state ->
           # TODO: Accumulate data later
+          # TODO: We need to make sure the types match, if we have string init values, update needs to match
           room_state = curr_channel.state
           # Here we take the passed data and try add
-          updated_init = Enum.reduce(Map.keys(data.payload), room_state, fn curr_data_key, curr_room_state ->
-            if Map.has_key?(curr_room_state, curr_data_key) do
-              Map.put(curr_room_state, curr_data_key, Map.get(data.payload, curr_data_key))
-            else
-              curr_room_state
-            end
-          end)
+          updated_init =
+            Enum.reduce(Map.keys(data.payload), room_state, fn curr_data_key, curr_room_state ->
+              if Map.has_key?(curr_room_state, curr_data_key) do
+                Map.put(curr_room_state, curr_data_key, Map.get(data.payload, curr_data_key))
+              else
+                curr_room_state
+              end
+            end)
 
           Map.merge(room_state, updated_init)
 
