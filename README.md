@@ -42,7 +42,7 @@ At its core, Mycelium is built to handle real-time WebSocket connections with ea
 
 ### Example (WIP)
 - [Room Based Chat (type: Accumulative)](https://github.com/toreanjoel/mycelium-demos/tree/main/socket-chat)
-- [Drawing Application (type: Shared / Collaborative)](https://github.com/toreanjoel/mycelium-demos/tree/main/socket-draw)
+- [Drawing Application (type: Shared)](https://github.com/toreanjoel/mycelium-demos/tree/main/socket-draw)
 - Multiplayer Movement  (type: Collaborative)
 - more...
 
