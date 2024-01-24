@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(Wsserve.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Mycelium.Repo, :manual)

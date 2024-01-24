@@ -1,9 +1,9 @@
-defmodule Wsserve.MixProject do
+defmodule Mycelium.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :wsserve,
+      app: :mycelium,
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -18,7 +18,7 @@ defmodule Wsserve.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Wsserve.Application, []},
+      mod: {Mycelium.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end

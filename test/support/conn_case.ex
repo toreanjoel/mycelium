@@ -1,4 +1,4 @@
-defmodule WsserveWeb.ConnCase do
+defmodule MyceliumWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -11,7 +11,7 @@ defmodule WsserveWeb.ConnCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use WsserveWeb.ConnCase, async: true`, although
+  by setting `use MyceliumWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -20,19 +20,19 @@ defmodule WsserveWeb.ConnCase do
   using do
     quote do
       # The default endpoint for testing
-      @endpoint WsserveWeb.Endpoint
+      @endpoint MyceliumWeb.Endpoint
 
-      use WsserveWeb, :verified_routes
+      use MyceliumWeb, :verified_routes
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import WsserveWeb.ConnCase
+      import MyceliumWeb.ConnCase
     end
   end
 
   setup tags do
-    Wsserve.DataCase.setup_sandbox(tags)
+    Mycelium.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

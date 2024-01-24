@@ -1,4 +1,4 @@
-# wsserve
+# project mycelium
 
 TCP Client Server written in Elixir and Phoenix
 
@@ -21,11 +21,11 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 ## Overview
 
-WSServer is an MVP real-time server platform designed to facilitate the rapid development and deployment of interactive applications. Leveraging Elixir and the Phoenix Framework, WSServer provides the backbone for a variety of real-time functionalities, from live chat systems to dynamic game servers using the TCP protocol (initially).
+Mycelium is an MVP real-time server platform designed to facilitate the rapid development and deployment of interactive applications. Leveraging Elixir and the Phoenix Framework, Mycelium provides the backbone for a variety of real-time functionalities, from live chat systems to dynamic game servers using the TCP protocol (initially).
 
 ## Application Description
 
-At its core, WSServer is built to handle real-time WebSocket connections with ease, allowing users to create and manage server instances that can cater to their specific real-time interaction needs. Whether it's for turn-based strategy games or synchronous collaborative tools, WSServer offers a robust and scalable solution.
+At its core, Mycelium is built to handle real-time WebSocket connections with ease, allowing users to create and manage server instances that can cater to their specific real-time interaction needs. Whether it's for turn-based strategy games or synchronous collaborative tools, Mycelium offers a robust and scalable solution.
 
 ### Features
 
@@ -41,8 +41,8 @@ At its core, WSServer is built to handle real-time WebSocket connections with ea
 - **Real-Time Data Flow**: Ensures rapid data exchange and state updates across client-server connections.
 
 ### Example (WIP)
-- [Room Based Chat (type: Accumulative)](https://github.com/toreanjoel/wsserve-demos/tree/main/socket-chat)
-- [Drawing Application (type: Shared / Collaborative)](https://github.com/toreanjoel/wsserve-demos/tree/main/socket-draw)
+- [Room Based Chat (type: Accumulative)](https://github.com/toreanjoel/mycelium-demos/tree/main/socket-chat)
+- [Drawing Application (type: Shared / Collaborative)](https://github.com/toreanjoel/mycelium-demos/tree/main/socket-draw)
 - Multiplayer Movement  (type: Collaborative)
 - more...
 
@@ -54,7 +54,7 @@ Users can create server processes that are automatically supervised and managed 
 
 ### Stateless MVP Model
 
-In its MVP phase, WSServer operates without persistent storage of messages or user sessions, focusing on live interactions. This decision streamlines the initial offering and ensures a focus on performance and reliability.
+In its MVP phase, Mycelium operates without persistent storage of messages or user sessions, focusing on live interactions. This decision streamlines the initial offering and ensures a focus on performance and reliability.
 
 ### Future Considerations
 
@@ -77,7 +77,7 @@ Comprehensive documentation will be provided, detailing setup procedures, API us
 
 ## Load Testing and Performance
 
-Prior to release, WSServer will undergo rigorous load testing to ensure it can handle the expected concurrent connection load and message throughput. Performance metrics and results will be made available in the documentation.
+Prior to release, Mycelium will undergo rigorous load testing to ensure it can handle the expected concurrent connection load and message throughput. Performance metrics and results will be made available in the documentation.
 
 - Look into using Tsung tooling or Artillery.
 
@@ -90,7 +90,7 @@ Prior to release, WSServer will undergo rigorous load testing to ensure it can h
 
 ## Contributing
 
-As an open platform, contributions and feedback are welcomed. Developers are encouraged to submit issues, pull requests, or suggestions to help improve WSServer.
+As an open platform, contributions and feedback are welcomed. Developers are encouraged to submit issues, pull requests, or suggestions to help improve Mycelium.
 
 ---
 

@@ -1,5 +1,5 @@
-defmodule WsserveWeb.PageControllerTest do
-  use WsserveWeb.ConnCase
+defmodule MyceliumWeb.PageControllerTest do
+  use MyceliumWeb.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")

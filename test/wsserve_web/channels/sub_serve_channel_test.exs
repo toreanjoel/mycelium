@@ -1,11 +1,11 @@
-defmodule WsserveWeb.SubServeChannelTest do
-  use WsserveWeb.ChannelCase
+defmodule MyceliumWeb.SubServeChannelTest do
+  use MyceliumWeb.ChannelCase
 
   setup do
     {:ok, _, socket} =
-      WsserveWeb.UserSocket
+      MyceliumWeb.UserSocket
       |> socket("user_id", %{some: :assign})
-      |> subscribe_and_join(WsserveWeb.SubServeChannel, "sub_serve:lobby")
+      |> subscribe_and_join(MyceliumWeb.SubServeChannel, "sub_serve:lobby")
 
     %{socket: socket}
   end

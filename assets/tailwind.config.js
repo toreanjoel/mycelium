@@ -8,8 +8,8 @@ const path = require("path")
 module.exports = {
   content: [
     "./js/**/*.js",
-    "../lib/wsserve_web.ex",
-    "../lib/wsserve_web/**/*.*ex"
+    "../lib/mycelium_web.ex",
+    "../lib/mycelium_web/**/*.*ex"
   ],
   theme: {
     extend: {

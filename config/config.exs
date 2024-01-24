@@ -7,19 +7,19 @@
 # General application configuration
 import Config
 
-config :wsserve,
-  ecto_repos: [Wsserve.Repo],
+config :mycelium,
+  ecto_repos: [Mycelium.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
-config :wsserve, WsserveWeb.Endpoint,
+config :mycelium, MyceliumWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Phoenix.Endpoint.Cowboy2Adapter,
   render_errors: [
-    formats: [html: WsserveWeb.ErrorHTML, json: WsserveWeb.ErrorJSON],
+    formats: [html: MyceliumWeb.ErrorHTML, json: MyceliumWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Wsserve.PubSub,
+  pubsub_server: Mycelium.PubSub,
   live_view: [signing_salt: "ONhZ/GFY"]
 
 # Configures the mailer
@@ -29,7 +29,7 @@ config :wsserve, WsserveWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :wsserve, Wsserve.Mailer, adapter: Swoosh.Adapters.Local
+config :mycelium, Mycelium.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
