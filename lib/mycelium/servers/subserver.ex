@@ -40,9 +40,8 @@ defmodule Mycelium.Servers.Subserver do
     {:ok, state}
   end
 
-  @doc """
-    Get the server config details
-  """
+
+  # Get the server config details
   def handle_call(:get_config, _from, state) when is_nil(state.config) do
     {:reply, {:error, "No config found. Make sure it exists."}, state}
   end
@@ -51,31 +50,27 @@ defmodule Mycelium.Servers.Subserver do
     {:reply, {:ok, config}, state}
   end
 
-  @doc """
-    The the server channels that currently exist
-  """
+
+  # The the server channels that currently exist
   def handle_call(:get_channels, _from, state) do
     {:reply, Map.keys(state.channel_states), state}
   end
 
-  @doc """
-    Get the state by the channel name currently stored in the server
-  """
+
+  # Get the state by the channel name currently stored in the server
   def handle_call({:get_channel, channel}, _from, state) do
     get_channel(Map.get(state.channel_states, channel), state)
   end
 
-  @doc """
-    Update the state of the specific channel - will merge to the data currenly existing in memory
-  """
+
+  # Update the state of the specific channel - will merge to the data currenly existing in memory
   def handle_call({:update_channel, channel, data}, _from, state) do
     update_channel(
       Map.get(state.channel_states, channel), channel, data, state);
   end
 
-  @doc """
-    Global room or channel state that will be initalized with properties
-  """
+
+  # Global room or channel state that will be initalized with properties
   def handle_call({:create_channel, name, type, payload}, _from, %{channel_states: channel_states} = state) do
     create_channel(channel_states, name, payload, type, state)
   end
@@ -90,9 +85,8 @@ defmodule Mycelium.Servers.Subserver do
     {:noreply, state}
   end
 
-  @doc """
-    The update specific to the state itself for the relevant type - accumulative
-  """
+
+  # The update specific to the state itself for the relevant type - accumulative
   defp channel_state_update(channel, data, %{channel_states: channel_states} = state, type) when type === :accumulative_state do
     curr_channel = Map.get(channel_states, channel, %{})
     payload = Map.new() |> Map.put(DateTime.utc_now() |> DateTime.to_unix(), data)
@@ -104,9 +98,8 @@ defmodule Mycelium.Servers.Subserver do
     Map.put(state, :channel_states, updated_channel_states)
   end
 
-  @doc """
-    The update specific to the state itself for the relevant type - collaborative
-  """
+
+  # The update specific to the state itself for the relevant type - collaborative
   defp channel_state_update(channel, data, %{channel_states: channel_states} = state, type) when type === :collaborative_state do
     curr_channel = Map.get(channel_states, channel, %{})
     # Assuming data is a map with user ID as key and payload as value
@@ -119,9 +112,8 @@ defmodule Mycelium.Servers.Subserver do
     Map.put(state, :channel_states, updated_channel_states)
   end
 
-  @doc """
-    The update specific to the state itself for the relevant type - shared state
-  """
+
+  # The update specific to the state itself for the relevant type - shared state
   defp channel_state_update(channel, data, %{channel_states: channel_states} = state, type) when type === :shared_state do
     curr_channel = Map.get(channel_states, channel, %{})
     room_state = curr_channel.state
@@ -143,7 +135,8 @@ defmodule Mycelium.Servers.Subserver do
     Map.put(state, :channel_states, updated_channel_states)
   end
 
-  # Base state init
+
+  # Base init server data
   defp init_base_state(manager_pid, id) do
     %{
       config: %Structs.Config{
@@ -157,19 +150,22 @@ defmodule Mycelium.Servers.Subserver do
     }
   end
 
-  # Here we check if the channel is nil, default fallback otherwise
+
+  # Fallback for no channel found to do an update for
   defp update_channel(data, _, _, state) when is_nil(data) do
     Logger.error("Unable to find channel to update")
     {:reply, {:ok, state}, state}
   end
 
-  # Update a channel and the data for that channel if it exists
+
+  # Update the channel with passed payload data relative to server type
   defp update_channel(%{type: type}, channel, data, state) do
     updated_state = channel_state_update(channel, data, state, type)
     {:reply, {:ok, updated_state}, updated_state}
   end
 
-  # Check there is data in the state, fallback error
+
+  # Check there is data in the state, fallback error for no channel found
   defp get_channel(data, state) when is_nil(data)do
     {:reply, {:error, "No channel found, create or make sure it exists."}, state}
   end
