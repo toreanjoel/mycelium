@@ -7,24 +7,18 @@ defmodule Mycelium.Servers.SubserverManager do
   require Logger
   alias Mycelium.SubserverSupervisor
   alias Mycelium.Servers.Subserver
+  alias Mycelium.Servers.Structs
 
   def start_link(args \\ %{}) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   def init(_state) do
-    # here we make sure we init this with the running serer details
     init_running_servers()
-    # TODO: Add a way to check if the processes in memory are active with process info, cleanup otherwise
-    {:ok,
-     %{
-       servers: %{}
-       # TODO: Add more items here that we wish the manager to track later
-     }}
+    {:ok, %Structs.ServerManagerInit{servers: %{}}}
   end
 
   # Get server state curr in memory
-  # TODO: this needs to be grouped by user id or the subserver itself needs to be dynamic per user
   def handle_call(:get_servers, _from, state) do
     {:reply, Map.get(state, :servers), state}
   end
@@ -45,10 +39,7 @@ defmodule Mycelium.Servers.SubserverManager do
 
   # delete a sub server
   def handle_call({:delete_server, server_id}, _from, state) do
-    # we get the process by id
-    pid = Map.get(state.servers, server_id, false)
-
-    if pid do
+    if pid = Map.get(state.servers, server_id, false) do
       case DynamicSupervisor.terminate_child(SubserverSupervisor, pid) do
         :ok ->
           updated_servers_state = remove_from_registry(state, server_id)
@@ -75,8 +66,7 @@ defmodule Mycelium.Servers.SubserverManager do
 
     # add the process inder the server
     added_server = Map.put(state.servers, server_id, server_pid)
-    updated_state = Map.put(state, :servers, added_server)
-    {:noreply, updated_state}
+    {:noreply, Map.put(state, :servers, added_server)}
   end
 
   # Subserver was shut down
@@ -124,31 +114,33 @@ defmodule Mycelium.Servers.SubserverManager do
 
   # init function that if this were to go down and back up it initialized with running servers
   defp init_running_servers do
-    servers = DynamicSupervisor.which_children(SubserverSupervisor)
-
-    if !Enum.empty?(servers) do
-      Enum.each(servers, fn {_, server_pid, _, _} ->
-        # request that the servers tell this manager their config details
-        send(server_pid, {:request_config, self()})
-      end)
-    end
-
-    # we do nothing if there are no servers
+    request_running_servers(DynamicSupervisor.which_children(SubserverSupervisor))
   end
 
   # here we request to make a new child sercer
   defp request_create_server(payload \\ %{}) do
-    init_state = %{
+    DynamicSupervisor.start_child(SubserverSupervisor, {Subserver, %Structs.SubServerInit{
       manager_pid: self(),
       custom_state: payload
-    }
-
-    DynamicSupervisor.start_child(SubserverSupervisor, {Subserver, init_state})
+    }})
   end
 
   # Takes the state and returns a new state to be used removing servers from memory
   defp remove_from_registry(state, server_id) when is_map(state) and is_binary(server_id) do
     updated_servers = Map.get(state, :servers) |> Map.delete(server_id)
     Map.put(state, :servers, updated_servers)
+  end
+
+  # Request to create server instance that are expected to be up
+  # Used incases the manager goes down and needs to reinit its registry
+  defp request_running_servers(servers) when length(servers) < 1 or is_nil((servers)) do
+    {:ok, "Currently no running servers to init with"}
+  end
+
+  defp request_running_servers(servers) when length(servers) > 0 do
+    Enum.each(servers, fn {_, server_pid, _, _} ->
+      # request that the servers tell this manager their config details
+      send(server_pid, {:request_config, self()})
+    end)
   end
 end

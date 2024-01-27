@@ -2,6 +2,23 @@ defmodule Mycelium.Servers.Structs do
   @moduledoc """
     The general server structs that describe data and their definitions
   """
+  defmodule ServerManagerInit do
+    @moduledoc """
+      The server manage init state used to describe the registry that manages the running subservers
+    """
+    @derive {Jason.Encoder, only: [:servers]}
+    @enforce_keys [:servers]
+    defstruct [servers: %{}]
+  end
+
+  defmodule SubServerInit do
+    @moduledoc """
+      The struct that describes the data when creating or requesting to create a instance
+    """
+    @derive {Jason.Encoder, only: [:manager_pid, :custom_state]}
+    @enforce_keys [:manager_pid, :custom_state]
+    defstruct [:manager_pid, :custom_state]
+  end
 
   defmodule Channel do
     @moduledoc """
