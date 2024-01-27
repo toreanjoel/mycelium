@@ -1,43 +1,18 @@
 defmodule MyceliumWeb.UserSocket do
+  @moduledoc """
+    The user socket module than handles the socket connect, server connection.
+    Seting the server to the user connection in order to join channels with in the
+    context of the server.
+  """
   require Logger
   use Phoenix.Socket
 
-  @salt "user_auth_salt"
-
-  # A Socket handler
-  #
-  # It's possible to control the websocket connection and
-  # assign values that can be accessed by your channel topics.
-
-  ## Channels
-  # Uncomment the following line to define a "room:*" topic
-  # pointing to the `MyceliumWeb.RoomChannel`:
-  #
-  # channel "room:*", MyceliumWeb.RoomChannel
-  #
-  # To create a channel file, use the mix task:
-  #
-  #     mix phx.gen.channel Room
-  #
-  # See the [`Channels guide`](https://hexdocs.pm/phoenix/channels.html)
-  # for further details.
   channel "lobby", MyceliumWeb.LobbyChannel
   channel "*", MyceliumWeb.RoomChannel
 
-  # Socket params are passed from the client and can
-  # be used to verify and authenticate a user. After
-  # verification, you can put default assigns into
-  # the socket that will be set for all channels, ie
-  #
-  #     {:ok, assign(socket, :user_id, verified_user_id)}
-  #
-  # To deny connection, return `:error` or `{:error, term}`. To control the
-  # response the client receives in that case, [define an error handler in the
-  # websocket
-  # configuration](https://hexdocs.pm/phoenix/Phoenix.Endpoint.html#socket/3-websocket-configuration).
-  #
-  # See `Phoenix.Token` documentation for examples in
-  # performing token verification on connect.
+  @doc """
+    Socket connection with relevant params to a specific server.
+  """
   @impl true
   def connect(%{"id" => server_id} = payload, socket, _connect_info) do
     servers = GenServer.call(Mycelium.Servers.SubserverManager, :get_servers)
