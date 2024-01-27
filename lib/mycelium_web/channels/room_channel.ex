@@ -1,52 +1,51 @@
 defmodule MyceliumWeb.RoomChannel do
+  @moduledoc """
+    The general room connection outside of the lobby channel. This is for all other channels.
+    The system will only allow based on the servers and the relevancy of them existing.
+  """
   use MyceliumWeb, :channel
   alias MyceliumWeb.Presence
-  alias MyceliumWeb.Channels.Helpers, as: ChannelHelpers
+  alias Mycelium.Servers.Helpers, as: ServerHelpers
+  alias Mycelium.Servers.Structs.EventPayload
 
-  # we list the events we want to have the interception work for
-  # we can do work before sending
-  intercept(["shout"])
-
-  # no access to the channel for access
   @impl true
+  @doc """
+    Join attempt to passed channel. Checking the server for rooms to allow only channels that exist
+  """
   def join(room, _payload, socket) do
-    {status, _} = ChannelHelpers.get_channel(socket.assigns.server_id, room)
-    case status do
-      :error ->
-        {:error,
-         %{
-           message:
-             "Room doesn't exist. Request room data from 'room:lobby' in order to get options available"
-         }}
-
-      _ ->
-        send(self(), {:user_joined_room, room})
-        {:ok, socket}
-    end
+    {status, _} = ServerHelpers.get_channel(socket.assigns.server_id, room)
+    server_join(status, socket, room)
   end
 
   @impl true
-  def handle_in("push", payload \\ %{}, socket) do
-    server_id = socket.assigns.server_id
-    channel = socket.topic
+  @doc """
+    The push event that all rooms have in order of the client to be able to send data to connected channel.
+  """
+  def handle_in("push", payload \\ %{}, %{assigns: assigns, topic: topic} = socket) do
+    server_id = assigns.server_id
 
-    event_data = %{
-      user: socket.assigns.user,
-      payload: payload
-    }
+    # This is Genserver call, we dont use result but good to note.
+    _resp = ServerHelpers.update_channel_state(
+        server_id,
+        topic,
+        %EventPayload{user: assigns.user, payload: payload}
+      )
+    {_, data} = ServerHelpers.get_channel(server_id, topic)
 
-    ChannelHelpers.update_channel_state(server_id, channel, event_data)
-    {_, data} = ChannelHelpers.get_channel(server_id, channel)
+    # broadcast to all including the sender? consider using the broadcast_from and caller ref the result
     broadcast(socket, "msg", %{ data: data})
-
-    {:reply, {:ok, event_data}, socket}
+    {:reply, {:ok, data}, socket}
   end
 
   @impl true
+  @doc """
+    Listener to init the room and broadcast room/presece data from helper function calls
+  """
   def handle_info({:user_joined_room, room}, socket) do
     # push the presence for the channel
     push_presence(socket)
-    {_status, data} = ChannelHelpers.get_channel(socket.assigns.server_id, room)
+
+    {_status, data} = ServerHelpers.get_channel(socket.assigns.server_id, room)
     push(socket, "state", %{data: data})
 
     {:noreply, socket}
@@ -59,6 +58,24 @@ defmodule MyceliumWeb.RoomChannel do
         online_at: inspect(System.system_time(:second))
       })
 
-    push(socket, "presence_list", Presence.list(socket))
+    push(socket, "presence", Presence.list(socket))
+  end
+
+  @doc """
+    We attempt to join the room if exists based on server and show relevant response oside effect
+  """
+  def server_join(status, _socket, _) when status === :error do
+    {
+      :error,
+      %{
+        message:
+          "Room doesn't exist. Request room data from 'room:lobby' in order to get options available"
+      }
+    }
+  end
+
+  def server_join(_status, socket, room) do
+    send(self(), {:user_joined_room, room})
+    {:ok, socket}
   end
 end

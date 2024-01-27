@@ -1,21 +1,33 @@
 defmodule MyceliumWeb.LobbyChannel do
+  @moduledoc """
+    Lobby channel module that manages the conection to the lobby channel that all servers have access to.
+    Main funcitonality is to server as a gateway for channel connections to get data on serverss
+  """
   use MyceliumWeb, :channel
   alias MyceliumWeb.Presence
-  alias MyceliumWeb.Channels.Helpers, as: ChannelHelpers
+  alias Mycelium.Servers.Helpers, as: ServerHelpers
 
   @impl true
+  @doc """
+    Join lobbt channel and on success start broadcasing presence updates
+  """
   def join("lobby", _payload, socket) do
     send(self(), :user_joined_lobby)
     {:ok, %{}, socket}
   end
 
   @impl true
+  @doc """
+    Event listener for clients that call the function to get details on available rooms on the connected server.
+  """
   def handle_in("get_rooms", _, socket) do
     push_rooms(socket)
     {:noreply, socket}
   end
 
-  # Listener to user joined event
+  @doc """
+    Listener to init the room and broadcast room/presece data from helper function calls
+  """
   @impl true
   def handle_info(:user_joined_lobby, socket) do
     push_presence(socket)
@@ -23,19 +35,20 @@ defmodule MyceliumWeb.LobbyChannel do
     {:noreply, socket}
   end
 
-  # send the presence for the connected channel
-  def push_presence(socket) do
+  # Presence helper that will assign and track connected socket.
+  # Also broadcast the updated presence list to connected users on the socket channel.
+  defp push_presence(socket) do
     {:ok, _} =
       Presence.track(socket, socket.assigns.user.id, %{
         online_at: inspect(System.system_time(:second))
       })
 
-    push(socket, "presence_list", Presence.list(socket))
+    push(socket, "presence", Presence.list(socket))
   end
 
-  # send rooms to the requesting user
+  # Get and send the room details currently avalable on the connected server for the current channel
   defp push_rooms(socket) do
-    push(socket, "available_rooms", %{data: ChannelHelpers.get_channels(socket.assigns.server_id)})
+    push(socket, "rooms", %{data: ServerHelpers.get_channels(socket.assigns.server_id)})
     {:noreply, socket}
   end
 end

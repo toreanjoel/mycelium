@@ -9,7 +9,6 @@ defmodule Mycelium.Application do
   def start(_type, _args) do
     children = [
       MyceliumWeb.Telemetry,
-      # TODO: Uncomment below to enable using database
       # Mycelium.Repo,
       {DNSCluster, query: Application.get_env(:mycelium, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Mycelium.PubSub},
