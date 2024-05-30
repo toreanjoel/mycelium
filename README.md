@@ -11,14 +11,6 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
 
-## Learn more
-
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
-
 ## Overview
 
 Mycelium is an MVP real-time server platform designed to facilitate the rapid development and deployment of interactive applications. Leveraging Elixir and the Phoenix Framework, Mycelium provides the backbone for a variety of real-time functionalities, from live chat systems to dynamic game servers using the TCP protocol (initially).
