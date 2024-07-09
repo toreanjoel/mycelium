@@ -1,6 +1,6 @@
 # project mycelium
 
-TCP Client Server written in Elixir and Phoenix
+TCP Server written in Elixir and Phoenix
 
 To start your Phoenix server:
 
