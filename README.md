@@ -1,4 +1,4 @@
-# project mycelium
+# Project mycelium
 
 TCP Server written in Elixir and Phoenix
 
